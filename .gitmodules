@@ -1,1 +1,4 @@
 # Register hackathon project submodules with git submodule add.
+[submodule "projects/AIHackathon202609"]
+	path = projects/AIHackathon202609
+	url = git@github.com:TakuHackathons/AIHackathon202609.git
