@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+
+.env
+.env.*
+
+docker/libretranslate
+
+portfolio/*.json
+portfolio/*.yml
+portfolio/*.yaml
+.opencode
+.aider*

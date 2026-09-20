@@ -1,0 +1,126 @@
+name: Sync Projects
+
+on:
+  push:
+    paths:
+      - 'projects/**'
+      - 'scripts/**'
+      - 'templates/**'
+      - 'portfolio/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.gitmodules'
+      - '.github/workflows/projects-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: projects-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+          fetch-depth: 0
+          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
+
+      # =========================
+      # pnpm setup (UPDATED)
+      # =========================
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      # =========================
+      # Node.js (UPDATED)
+      # =========================
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      # =========================
+      # Ollama setup
+      # =========================
+      - name: Cache Ollama models
+        uses: actions/cache@v6
+        with:
+          path: ~/.ollama/models
+          key: ${{ runner.os }}-ollama-qwen3-4b-v1
+          restore-keys: |
+            ${{ runner.os }}-ollama-qwen3-4b-
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama
+        run: |
+          ollama serve > /tmp/ollama.log 2>&1 &
+
+      - name: Wait for Ollama
+        run: |
+          for i in {1..60}; do
+            if curl -fs http://localhost:11434/api/tags > /dev/null; then
+              echo "Ollama is ready"
+              exit 0
+            fi
+            echo "Waiting for Ollama..."
+            sleep 2
+          done
+
+          echo "Ollama failed to start"
+          cat /tmp/ollama.log
+          exit 1
+
+      - name: Install translation model
+        run: |
+          ollama pull qwen3:4b
+          ollama list
+
+      # =========================
+      # Sync pipeline
+      # =========================
+      - name: Validate projects
+        run: pnpm run projects:validate
+
+      - name: Sync projects
+        run: pnpm run projects:sync -- --ollama-url http://localhost:11434 --ollama-model qwen3:4b
+
+      - name: Format repository
+        run: pnpm run format
+
+      # =========================
+      # Commit changes
+      # =========================
+      - name: Commit and push changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+          git add .
+
+          git diff --cached --quiet && echo "No changes" && exit 0
+
+          git commit -m "Auto sync projects"
+          git push
+
+      # =========================
+      # Debug on failure
+      # =========================
+      - name: Debug Ollama logs on failure
+        if: failure()
+        run: cat /tmp/ollama.log
