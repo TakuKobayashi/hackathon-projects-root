@@ -5,3 +5,6 @@
 [submodule "projects/AltitudeZero"]
 	path = projects/AltitudeZero
 	url = git@github.com:TakuHackathons/PLATEAUHackChallengeTokyo202609.git
+[submodule "projects/UnityGameJam2026"]
+	path = projects/UnityGameJam2026
+	url = git@github.com:TakuHackathons/UnityGameJam2026.git
