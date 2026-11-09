@@ -72,6 +72,7 @@ Samples / infrastructure experiments / reusable technical foundations
 | Project                                            | Description                                                                | status     |
 | -------------------------------------------------- | -------------------------------------------------------------------------- | ---------- |
 | [AIHackathon202609](./projects/AIHackathon202609/) | AIHackathon event page: https://aibuilderstokyo.connpass.com/event/404622/ | incubating |
+| [UnityGameJam2026](./projects/UnityGameJam2026/)   |                                                                            | incubating |
 
 ---
 
